@@ -1,3 +1,5 @@
+package naja.compiler
+
 import org.specs2.mutable._
 
 class ParserSpec extends Specification {
@@ -21,7 +23,11 @@ class ParserSpec extends Specification {
     "Parse @signature" in {
       check("""@()""", Template("()", Nil))
       check("""@(a: Int)""", Template("(a: Int)", Nil))
-      check("""@(a: Int, b: String)(implicit ev: Ev[Int])""", Template("(a: Int, b: String)(implicit ev: Ev[Int])", Nil))
+      check("""
+        |@(a: Int, b: String)(implicit ev: Ev[Int])
+        |
+        |%html
+      """, Template("(a: Int, b: String)(implicit ev: Ev[Int])", Node(Tag("html", Nil, Map.empty)) :: Nil))
     }
   }
 
