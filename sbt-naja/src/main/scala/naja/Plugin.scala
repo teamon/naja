@@ -54,7 +54,7 @@ object NajaPlugin extends Plugin {
 
       (sourceGenerators in Compile) <+= najaCompile,
       (managedSourceDirectories in Compile) <+= target in najaCompile,
-      (compile in  Compile) <<= (compile in Compile).dependsOn(najaCompile)
+      (compile in Compile) <<= (compile in Compile).dependsOn(najaCompile)
     )
   }
 }

@@ -1,5 +1,6 @@
 import sbt._
 import sbt.Keys._
+import ScriptedPlugin._
 
 object Build extends Build {
   lazy val common = seq(
@@ -28,11 +29,10 @@ object Build extends Build {
   lazy val sbtNaja =
     Project("sbt-naja", file("sbt-naja"))
       .settings(common:_*)
-      .settings(ScriptedPlugin.scriptedSettings: _*)
+      .settings(scriptedSettings: _*)
       .settings(
-        ScriptedPlugin.scriptedBufferLog := false,
-        sbtPlugin := true
+        sbtPlugin := true,
+        scriptedBufferLog := false
       )
       .dependsOn(najaCompiler)
-
 }
