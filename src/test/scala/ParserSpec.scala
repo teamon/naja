@@ -47,11 +47,39 @@ class ParserSpec extends Specification {
       checkBody("""
         |%html
         |  %head
+        |    %ul
+        |      %li
+        |      %li
+        |
+        |    %div
         |  %body
+        |    %div
+        |      %span
+        |        %strong
+        |
+        |    %table
       """,
         Node(Tag("html", Nil, Map.empty),
-          Node(Tag("head", Nil, Map.empty)) ::
-          Node(Tag("body", Nil, Map.empty)) ::
+          Node(Tag("head", Nil, Map.empty),
+            Node(Tag("ul", Nil, Map.empty),
+              Node(Tag("li", Nil, Map.empty)) ::
+              Node(Tag("li", Nil, Map.empty)) ::
+              Nil
+            ) ::
+            Node(Tag("div", Nil, Map.empty)) ::
+            Nil
+          ) ::
+          Node(Tag("body", Nil, Map.empty),
+            Node(Tag("div", Nil, Map.empty),
+              Node(Tag("span", Nil, Map.empty),
+                Node(Tag("strong", Nil, Map.empty)) ::
+                Nil
+              ) ::
+              Nil
+            ) ::
+            Node(Tag("table", Nil, Map.empty)) ::
+            Nil
+          ) ::
           Nil
         ) ::
         Nil
