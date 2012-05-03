@@ -27,7 +27,7 @@ class ParserSpec extends Specification {
         |@(a: Int, b: String)(implicit ev: Ev[Int])
         |
         |%html
-      """, Template("(a: Int, b: String)(implicit ev: Ev[Int])", Node(Tag("html", Nil, Map.empty)) :: Nil))
+      """, Template("(a: Int, b: String)(implicit ev: Ev[Int])", Node(Tag("html")) :: Nil))
     }
   }
 
@@ -48,7 +48,7 @@ class ParserSpec extends Specification {
     }
 
     "basic html tags" in {
-      checkBody("""%html""", Node(Tag("html", Nil, Map.empty)) :: Nil)
+      checkBody("""%html""", Node(Tag("html")) :: Nil)
 
       checkBody("""
         |%html
@@ -65,25 +65,25 @@ class ParserSpec extends Specification {
         |
         |    %table
       """,
-        Node(Tag("html", Nil, Map.empty),
-          Node(Tag("head", Nil, Map.empty),
-            Node(Tag("ul", Nil, Map.empty),
-              Node(Tag("li", Nil, Map.empty)) ::
-              Node(Tag("li", Nil, Map.empty)) ::
+        Node(Tag("html"),
+          Node(Tag("head"),
+            Node(Tag("ul"),
+              Node(Tag("li")) ::
+              Node(Tag("li")) ::
               Nil
             ) ::
-            Node(Tag("div", Nil, Map.empty)) ::
+            Node(Tag("div")) ::
             Nil
           ) ::
-          Node(Tag("body", Nil, Map.empty),
-            Node(Tag("div", Nil, Map.empty),
-              Node(Tag("span", Nil, Map.empty),
-                Node(Tag("strong", Nil, Map.empty)) ::
+          Node(Tag("body"),
+            Node(Tag("div"),
+              Node(Tag("span"),
+                Node(Tag("strong")) ::
                 Nil
               ) ::
               Nil
             ) ::
-            Node(Tag("table", Nil, Map.empty)) ::
+            Node(Tag("table")) ::
             Nil
           ) ::
           Nil
@@ -93,8 +93,8 @@ class ParserSpec extends Specification {
     }
 
     "html class (.class)" in {
-      checkBody("""%span.ca""", Node(Tag("span", "ca" :: Nil, Map.empty)) :: Nil)
-      checkBody("""%span.ca.cb.cc""", Node(Tag("span", "ca" :: "cb" :: "cc" :: Nil, Map.empty)) :: Nil)
+      checkBody("""%span.ca""", Node(Tag("span", "ca" :: Nil)) :: Nil)
+      checkBody("""%span.ca.cb.cc""", Node(Tag("span", "ca" :: "cb" :: "cc" :: Nil)) :: Nil)
     }
 
     "html id (#id)" in {
@@ -103,6 +103,11 @@ class ParserSpec extends Specification {
 
     "html attributes" in {
       checkBody("""%span(a="1" b="2")""", Node(Tag("span", Nil, Map("a" -> LiteralText("1"), "b" -> LiteralText("2")))) :: Nil)
+    }
+
+    "autoclosed tag" in {
+      checkBody("""%img/""", Node(Tag("img", autoclose = true)) :: Nil)
+      checkBody("""%img""", Node(Tag("img", autoclose = false)) :: Nil)
     }
   }
 }

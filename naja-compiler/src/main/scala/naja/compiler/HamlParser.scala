@@ -34,7 +34,7 @@ object HamlParser extends IndentedParser {
   // case class Spaces(count: Int) extends Expr { override def toString = "Spaces(" + count + ", " + pos + ")"}
   // object NewLine extends Expr
   case class LiteralText(content: String) extends Expr
-  case class Tag(name: String, classes: List[String], attributes: Map[String, Expr]) extends Expr
+  case class Tag(name: String, classes: List[String] = Nil, attributes: Map[String, Expr] = Map.empty, autoclose: Boolean = false) extends Expr
 
   def signature = "@" ~> ".+".r <~ nl
 
@@ -46,13 +46,13 @@ object HamlParser extends IndentedParser {
   def tagAttributesKey = """\w+""".r
   def tagAttributesValue = "\"" ~> literalText <~ "\""
   def tagAttributes = "(" ~> rep(tagAttributesKey ~ ("=" ~> tagAttributesValue) <~ " *".r) <~ ")"
-  def tag = tagName ~ opt(tagId) ~ tagClasses ~ opt(tagAttributes) ^^ {
-    case name ~ id ~ classes ~ attributesOpt =>
+  def tag = tagName ~ opt(tagId) ~ tagClasses ~ opt(tagAttributes) ~ opt("/".r) ^^ {
+    case name ~ id ~ classes ~ attributesOpt ~ autoclose =>
       val attrs1 = id.map { v => Map("id" -> LiteralText(v)) } getOrElse Map()
       val attrs2 = attributesOpt.map {
         _.foldLeft(Map[String, Expr]()) { case (map, key ~ value) => map + (key -> value) }
       } getOrElse Map()
-      Tag(name, classes.map(_.drop(1)), attrs1 ++ attrs2)
+      Tag(name, classes.map(_.drop(1)), attrs1 ++ attrs2, autoclose.isDefined)
   }
 
   def element = positioned(tag | literalText)
