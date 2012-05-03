@@ -12,6 +12,7 @@ object Build extends Build {
 
   // dependencies
   val specs2 =  "org.specs2" %% "specs2" % "1.9" % "test"
+  val treehugger = "com.eed3si9n" %% "treehugger" % "0.1.3"
 
 
   lazy val root =
@@ -23,7 +24,7 @@ object Build extends Build {
     Project("naja-compiler", file("naja-compiler"))
       .settings(common:_*)
       .settings(
-        libraryDependencies += specs2
+        libraryDependencies ++= Seq(specs2, treehugger)
       )
 
   lazy val sbtNaja =
