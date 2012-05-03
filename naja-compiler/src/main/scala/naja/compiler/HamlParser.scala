@@ -5,16 +5,13 @@ import scala.util.parsing.combinator._
 import scala.util.parsing.input._
 
 trait IndentedParser extends RegexParsers {
-  type E
-  case class Node(content: E, body: List[Node] = Nil)
-
   override def skipWhitespace = false
 
   def indentUnit = """  """.r
 
   def nl = """\r*\n""".r
 
-  def nestedBlocks(element: Parser[E]) = {
+  def nestedBlocks(element: Parser[Expr]) = {
     def line(n: Int): Parser[Node] = repN(n, indentUnit) ~ (element /*| err("Inconsistent indentation")*/) ~ nl ~ rep(line(n+1)) ^^ {
       case in ~ s ~ ne ~ body => Node(s, body)
     }
@@ -26,33 +23,37 @@ trait IndentedParser extends RegexParsers {
 }
 
 object HamlParser extends IndentedParser {
-  sealed trait Expr extends Positional
-  type E = Expr
-
-  case class Template(signature: String, body: List[Node])
-
-  // case class Spaces(count: Int) extends Expr { override def toString = "Spaces(" + count + ", " + pos + ")"}
-  // object NewLine extends Expr
-  case class LiteralText(content: String) extends Expr
-  case class Tag(name: String, classes: List[String] = Nil, attributes: Map[String, Expr] = Map.empty, autoclose: Boolean = false) extends Expr
-
   def signature = "@" ~> ".+".r <~ nl
 
   def literalText = """[\w ]+""".r ^^ { LiteralText(_) }
 
   def tagName = """%\w+""".r ^^ { _.drop(1) }
-  def tagId = """#.+""".r ^^ { _.drop(1) }
-  def tagClasses = rep("""\.\w+""".r)
+  def tagId = """#[A-Za-z0-9_-]+""".r ^^ { _.drop(1) }
+  def tagClass = """\.\w+""".r ^^ { _.drop(1) }
+  def tagClasses = rep(tagClass)
   def tagAttributesKey = """\w+""".r
   def tagAttributesValue = "\"" ~> literalText <~ "\""
   def tagAttributes = "(" ~> rep(tagAttributesKey ~ ("=" ~> tagAttributesValue) <~ " *".r) <~ ")"
-  def tag = tagName ~ opt(tagId) ~ tagClasses ~ opt(tagAttributes) ~ opt("/".r) ^^ {
-    case name ~ id ~ classes ~ attributesOpt ~ autoclose =>
-      val attrs1 = id.map { v => Map("id" -> LiteralText(v)) } getOrElse Map()
-      val attrs2 = attributesOpt.map {
+
+
+  def tagStartingWithName: Parser[(Option[String], Option[String], List[String])] = (tagName ~ tagClasses ~ opt(tagId) ~ tagClasses) ^^ {
+    case name ~ classes1 ~ idOpt ~ classes2 => (Some(name), idOpt, classes1 ::: classes2)
+  }
+  def tagStartingWithId: Parser[(Option[String], Option[String], List[String])] = (tagId ~ tagClasses) ^^ {
+    case id ~ classes => (None, Some(id), classes)
+  }
+  def tagStaringWithClass: Parser[(Option[String], Option[String], List[String])] = (tagClass ~ tagClasses ~ opt(tagId) ~ tagClasses) ^^ {
+    case cls ~ classes1 ~ idOpt ~ classes2 => (None, idOpt, cls :: classes1 ::: classes2)
+  }
+  def tagBegining = (tagStartingWithName | tagStartingWithId | tagStaringWithClass)
+
+  def tag = tagBegining ~ opt(tagAttributes) ~ opt("/".r) ^^ {
+    case (nameOpt, idOpt, classes) ~ attributesOpt ~ autoclose =>
+      val attrs = attributesOpt.map {
         _.foldLeft(Map[String, Expr]()) { case (map, key ~ value) => map + (key -> value) }
       } getOrElse Map()
-      Tag(name, classes.map(_.drop(1)), attrs1 ++ attrs2, autoclose.isDefined)
+
+      Tag(nameOpt, idOpt, classes, attrs, autoclose.isDefined)
   }
 
   def element = positioned(tag | literalText)
