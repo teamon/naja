@@ -47,16 +47,17 @@ object HamlParser extends IndentedParser {
   }
   def tagBegining = (tagStartingWithName | tagStartingWithId | tagStaringWithClass)
 
-  def tag = tagBegining ~ opt(tagAttributes) ~ opt("/".r) ^^ {
-    case (nameOpt, idOpt, classes) ~ attributesOpt ~ autoclose =>
+  def tag = tagBegining ~ opt(tagAttributes) ~ opt("/".r) ~ (" *".r ~> opt(notTag)) ^^ {
+    case (nameOpt, idOpt, classes) ~ attributesOpt ~ autoclose ~ contentOpt =>
       val attrs = attributesOpt.map {
         _.foldLeft(Map[String, Expr]()) { case (map, key ~ value) => map + (key -> value) }
       } getOrElse Map()
 
-      Tag(nameOpt, idOpt, classes, attrs, autoclose.isDefined)
+      Tag(nameOpt, idOpt, classes, attrs, autoclose.isDefined, contentOpt)
   }
 
-  def element = positioned(tag | literalText)
+  def notTag = positioned(literalText)
+  def element = positioned(tag | notTag)
 
   def parser = opt(signature) ~ nestedBlocks(element) <~ rep(nl) ^^ {
     case sig ~ body => Template(sig getOrElse "()", body)

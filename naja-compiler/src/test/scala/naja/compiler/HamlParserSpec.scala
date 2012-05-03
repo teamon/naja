@@ -110,7 +110,6 @@ class ParserSpec extends Specification {
       checkBody("""#my.a.b.c""", Node(Tag(None, Some("my"), "a" :: "b" :: "c" :: Nil)) :: Nil)
     }
 
-
     "html attributes" in {
       checkBody("""%span(a="1" b="2")""", Node(Tag(Some("span"), attributes = Map("a" -> LiteralText("1"), "b" -> LiteralText("2")))) :: Nil)
     }
@@ -118,6 +117,10 @@ class ParserSpec extends Specification {
     "autoclosed tag" in {
       checkBody("""%img/""", Node(Tag(Some("img"), autoclose = true)) :: Nil)
       checkBody("""%img""", Node(Tag(Some("img"), autoclose = false)) :: Nil)
+    }
+
+    "tag with content" in {
+      checkBody("""%span Some content""", Node(Tag(Some("span"), content = Some(LiteralText("Some content")))) :: Nil)
     }
   }
 }

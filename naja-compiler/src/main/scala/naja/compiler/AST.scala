@@ -9,6 +9,7 @@ case class Tag(name: Option[String],
                classes: List[String] = Nil,
                attributes: Map[String, Expr] = Map.empty,
                autoclose: Boolean = false,
+               content: Option[Expr] = None,
                body: List[Expr] = Nil) extends Expr
 
 case class Template(signature: String, body: List[Node])
