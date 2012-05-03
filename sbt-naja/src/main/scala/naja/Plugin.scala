@@ -18,7 +18,11 @@ object SbtNajaCompiler {
         "Compiling naja template ..." + templateFile.toString.substring(skipChars) + " to .../" /*+ targetFile.getName*/
       )
 
+      val start = System.currentTimeMillis
       val (generatedFile, generatedSource) = NajaCompiler.compile(templateFile, sourceDir, generatedDir)
+      val stop = System.currentTimeMillis
+
+      streams.log.info("Compiled ..." + templateFile.toString.substring(skipChars) + " in " + (stop-start) + "ms")
 
       IO.write(generatedFile, generatedSource)
       generatedFile
