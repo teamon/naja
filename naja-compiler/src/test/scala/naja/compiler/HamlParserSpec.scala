@@ -20,9 +20,15 @@ class ParserSpec extends Specification {
       check("""""", Template("()", Nil))
     }
 
-    "Parse @signature" in {
+    "Parse empty signature" in {
       check("""@()""", Template("()", Nil))
+    }
+
+    "Parse simple signature" in {
       check("""@(a: Int)""", Template("(a: Int)", Nil))
+    }
+
+    "Parse more complicated signature" in {
       check("""
         |@(a: Int, b: String)(implicit ev: Ev[Int])
         |
@@ -33,16 +39,16 @@ class ParserSpec extends Specification {
 
   "Basic HAML" should {
     "literal text" in {
-      checkBody("""some text""", Node(LiteralText("some text")) :: Nil)
+      checkBody("""some text""", Node(Text(LiteralText("some text") :: Nil)) :: Nil)
 
       checkBody("""
         |some text
         |on multiple
         |lines
       """,
-        Node(LiteralText("some text")) ::
-        Node(LiteralText("on multiple")) ::
-        Node(LiteralText("lines")) ::
+        Node(Text(LiteralText("some text") :: Nil)) ::
+        Node(Text(LiteralText("on multiple") :: Nil)) ::
+        Node(Text(LiteralText("lines") :: Nil)) ::
         Nil
       )
     }
@@ -111,7 +117,7 @@ class ParserSpec extends Specification {
     }
 
     "html attributes" in {
-      checkBody("""%span(a="1" b="2")""", Node(Tag(Some("span"), attributes = Map("a" -> LiteralText("1"), "b" -> LiteralText("2")))) :: Nil)
+      checkBody("""%span(a="1" b="2")""", Node(Tag(Some("span"), attributes = Map("a" -> Text(LiteralText("1") :: Nil), "b" -> Text(LiteralText("2") :: Nil)))) :: Nil)
     }
 
     "autoclosed tag" in {
@@ -120,7 +126,31 @@ class ParserSpec extends Specification {
     }
 
     "tag with content" in {
-      checkBody("""%span Some content""", Node(Tag(Some("span"), content = Some(LiteralText("Some content")))) :: Nil)
+      checkBody("""%span Some content""", Node(Tag(Some("span"), content = Some(Text(LiteralText("Some content") :: Nil)))) :: Nil)
+    }
+  }
+
+  "interpolated text" in {
+    checkBody(
+      """One plus two is #{1+2} yea! #{x} really""",
+      Node(Text(
+        LiteralText("One plus two is ") ::
+        InterpolatedText("1+2") ::
+        LiteralText(" yea! ") ::
+        InterpolatedText("x") ::
+        LiteralText("really") ::
+        Nil)
+      ) :: Nil
+    )
+  }.pendingUntilFixed
+
+  "print scala evaluated statement (= )" should {
+    "very simple statement" in {
+      checkBody("""= 1 + 2""", Node(Evaluated("1 + 2")) :: Nil)
     }
   }
 }
+
+
+
+

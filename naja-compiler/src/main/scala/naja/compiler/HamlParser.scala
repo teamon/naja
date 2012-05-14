@@ -24,17 +24,20 @@ trait IndentedParser extends RegexParsers {
 
 object HamlParser extends IndentedParser {
   def signature = "@" ~> ".+".r <~ nl
+  def validName = """[A-Za-z0-9_-]+""".r
 
-  def literalText = """[\w ]+""".r ^^ { LiteralText(_) }
+  // def interpolatedText = """#{""" ~> """[^}]+""".r <~ """}""" ^^ Evaluated
+  def literalText = ("""(\\#)[^#]*""".r | """[^#\n\r]+""".r) ^^ LiteralText
 
-  def tagName = """%\w+""".r ^^ { _.drop(1) }
-  def tagId = """#[A-Za-z0-9_-]+""".r ^^ { _.drop(1) }
-  def tagClass = """\.\w+""".r ^^ { _.drop(1) }
+  def text = rep1(literalText) ^^ Text //rep(interpolatedText | literalText) ^^ Text
+
+  def tagName = "%" ~> validName
+  def tagId = "#" ~> validName
+  def tagClass = "." ~> validName
   def tagClasses = rep(tagClass)
-  def tagAttributesKey = """\w+""".r
-  def tagAttributesValue = "\"" ~> literalText <~ "\""
+  def tagAttributesKey = validName
+  def tagAttributesValue = "\"" ~> /*literalText*/validName <~ "\"" ^^ { s => Text(LiteralText(s) :: Nil) } // TODO!
   def tagAttributes = "(" ~> rep(tagAttributesKey ~ ("=" ~> tagAttributesValue) <~ " *".r) <~ ")"
-
 
   def tagStartingWithName: Parser[(Option[String], Option[String], List[String])] = (tagName ~ tagClasses ~ opt(tagId) ~ tagClasses) ^^ {
     case name ~ classes1 ~ idOpt ~ classes2 => (Some(name), idOpt, classes1 ::: classes2)
@@ -56,7 +59,12 @@ object HamlParser extends IndentedParser {
       Tag(nameOpt, idOpt, classes, attrs, autoclose.isDefined, contentOpt)
   }
 
-  def notTag = positioned(literalText)
+  def scalaExpression = """ *[^\n]+""".r
+
+  def evaluated = "=" ~> scalaExpression ^^ { e => Evaluated(e.dropWhile(' '==)) }
+  def statement = "-" ~> scalaExpression ^^ { e => Statement(e.dropWhile(' '==)) }
+
+  def notTag = positioned(evaluated | statement | text)
   def element = positioned(tag | notTag)
 
   def parser = opt(signature) ~ nestedBlocks(element) <~ rep(nl) ^^ {
