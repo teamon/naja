@@ -130,19 +130,20 @@ class ParserSpec extends Specification {
     }
   }
 
-  "interpolated text" in {
-    checkBody(
-      """One plus two is #{1+2} yea! #{x} really""",
-      Node(Text(
-        LiteralText("One plus two is ") ::
-        InterpolatedText("1+2") ::
-        LiteralText(" yea! ") ::
-        InterpolatedText("x") ::
-        LiteralText("really") ::
-        Nil)
-      ) :: Nil
-    )
-  }.pendingUntilFixed
+  "interpolated text" should {
+    "test 1" in {
+      checkBody("""ab cd""", Node(Text(LiteralText("ab cd") :: Nil)) :: Nil)
+    }
+    "test 2" in {
+      checkBody("""a #{xx} b c d""", Node(Text(LiteralText("a ") :: InterpolatedText("xx") :: LiteralText(" b c d") :: Nil)) :: Nil)
+    }
+    "test 3" in {
+      checkBody("""\#aa #{yy} b c d#{zz}""", Node(Text(LiteralText("#aa ") :: InterpolatedText("yy") :: LiteralText(" b c d") :: InterpolatedText("zz") :: Nil)) :: Nil)
+    }
+    "test 4" in {
+      checkBody("""\#{x}#{y}""", Node(Text(LiteralText("#{x}") :: InterpolatedText("y") :: Nil)) :: Nil)
+    }
+  }
 
   "print scala evaluated statement (= )" should {
     "very simple statement" in {

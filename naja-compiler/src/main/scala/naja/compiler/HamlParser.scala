@@ -26,10 +26,13 @@ object HamlParser extends IndentedParser {
   def signature = "@" ~> ".+".r <~ nl
   def validName = """[A-Za-z0-9_-]+""".r
 
-  // def interpolatedText = """#{""" ~> """[^}]+""".r <~ """}""" ^^ Evaluated
-  def literalText = ("""(\\#)[^#]*""".r | """[^#\n\r]+""".r) ^^ LiteralText
+  def interpolatedText = """#{""" ~> """[^}]+""".r <~ """}""" ^^ InterpolatedText
+  def literalText = ("""(\\#)[^#]*""".r | """[^#\n\r]+""".r) ^^ { s =>
+    val a = if(s.head == '\\') s.drop(1) else s // TODO: This is kind of hack
+    LiteralText(a)
+  }
 
-  def text = rep1(literalText) ^^ Text //rep(interpolatedText | literalText) ^^ Text
+  def text = rep1(interpolatedText | literalText) ^^ Text
 
   def tagName = "%" ~> validName
   def tagId = "#" ~> validName
